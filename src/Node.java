@@ -24,7 +24,7 @@ public class Node {
         });
     }
 
-    public Node getLastChildren() {
+    public Node getLastChild() {
         return children.get(getCountKeys());
     }
 

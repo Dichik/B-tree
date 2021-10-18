@@ -34,7 +34,7 @@ public class BTree {
                 return currentNode.getChildAt(i);
             }
         }
-        return currentNode.getLastChildren();
+        return currentNode.getLastChild();
     }
 
     public Pair search(int key) {
@@ -55,10 +55,11 @@ public class BTree {
         for (int i = 0; i < currentNode.getKeys().size(); ++i) {
             Pair value = currentNode.getKeys().get(i);
             if (key <= value.getKey()) {
+                if(key == value.getKey()) return value;
                 return search(currentNode.getChildren().get(i), key);
             }
         }
-        return search(currentNode.getChildren().get(currentNode.getCountKeys()), key);
+        return search(currentNode.getLastChild(), key);
     }
 
     public void remove(int key) {
@@ -84,31 +85,40 @@ public class BTree {
     private void rebuild(Node currentNode) {
         if (currentNode.getCountKeys() < 2 * T - 1) return;
 
-        // T = 2 then middle = 1
-        // T = 3 then middle = 2
         int middle = T - 1;
 
-        // we have 2 * T - 1 keys and should have 2 * T children
-        // left subtree will have T - 1 keys
-
         Node leftSubtree = getLeftSubtree(currentNode);
-        //System.out.println("Left subtree: " + leftSubtree);
         Node rightSubtree = getRightSubtree(currentNode);
-        //System.out.println("Right subtree: " + rightSubtree);
 
         if (currentNode.getParent() != null) {
             currentNode.getParent().addKey(currentNode.getKeyAt(middle));
-        } else {
-            Pair key = currentNode.getKeyAt(middle);
-            root.clearAllKeys();
-            root.addKey(key);
-            root.addChild(leftSubtree);
-            root.addChild(rightSubtree);
+
+            for(int i = 0; i < currentNode.getParent().getChildren().size(); i ++ ) {
+                if(currentNode.getParent().getChildAt(i).getKeys().size() >= 2 * T - 1) {
+                    currentNode.getParent().getChildren().remove(i);
+                    break;
+                }
+            }
+
+            currentNode.getParent().addChild(leftSubtree);
+            currentNode.getParent().addChild(rightSubtree);
 
             leftSubtree.setParent(currentNode.getParent());
             rightSubtree.setParent(currentNode.getParent());
 
             currentNode = null;
+
+            rebuild(leftSubtree.getParent());
+        } else {
+            Pair key = currentNode.getKeyAt(middle);
+            currentNode.clearAllKeys();
+            currentNode.addKey(key);
+            currentNode.clearAllChildren();
+            currentNode.addChild(leftSubtree);
+            currentNode.addChild(rightSubtree);
+
+            leftSubtree.setParent(currentNode);
+            rightSubtree.setParent(currentNode);
         }
     }
 
@@ -139,7 +149,7 @@ public class BTree {
         if (!currentNode.isLeaf()) {
             for (int i = T; i < currentNode.getChildren().size(); ++i) {
                 rightSubtree.addChild(currentNode.getChildAt(i));
-                rightSubtree.getChildAt(i).setParent(rightSubtree);
+                rightSubtree.getChildAt(i - T).setParent(rightSubtree);
             }
         }
 
@@ -157,7 +167,7 @@ public class BTree {
         System.out.println(root.getKeys());
         System.out.println("Depth: " + depth);
 
-        for (int i = 0; i < root.getChildren().size(); ++i) {
+        for(int i = 0; i < root.getChildren().size(); ++ i) {
             dive(depth + 1, root.getChildAt(i));
         }
     }
