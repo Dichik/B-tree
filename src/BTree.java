@@ -9,10 +9,6 @@ public class BTree {
         T = new Main().getT();
     }
 
-    public Node getRoot() {
-        return root;
-    }
-
     public void insert(Pair key) {
         insert(root, key);
     }
@@ -55,7 +51,7 @@ public class BTree {
         for (int i = 0; i < currentNode.getKeys().size(); ++i) {
             Pair value = currentNode.getKeys().get(i);
             if (key <= value.getKey()) {
-                if(key == value.getKey()) return value;
+                if (key == value.getKey()) return value;
                 return search(currentNode.getChildren().get(i), key);
             }
         }
@@ -63,23 +59,91 @@ public class BTree {
     }
 
     public void remove(int key) {
+        // check if we have this key
+        Node currentNode = findNodeWithKey(key);
+        if(currentNode == null) {
+            System.out.println("There is no [" + key + "] key");
+            return;
+        }
 
+        if(currentNode.isLeaf()) {
+            if(currentNode.getCountKeys() > T - 1) {
+                for(int i = 0; i < currentNode.getCountKeys(); ++ i) {
+                    if(currentNode.getKeyAt(i).getKey() == key) {
+                        currentNode.deleteKeyAt(i);
+                    }
+                 }
+            } else {
+                int position = -1;
+                for(int i = 0; i < currentNode.getParent().getChildren().size(); ++ i) {
+                    if(currentNode.getParent().getChildAt(i).getIndexOfKey(key) != -1) {
+                        position = i;
+                    }
+                }
+                //System.out.println("Position: " + position);
+                if(position > 0 && currentNode.getParent()
+                        .getChildAt(position - 1)
+                        .getCountKeys() > T - 1) {
+                    /*OK*/
+                    Pair fromLeftChild = currentNode.getParent()
+                            .getChildAt(position - 1)
+                            .getKeyWithDeletion(false);
+                    /*OK*/
+                    Pair pairFromParent = currentNode.getParent().replaceAndReturn(fromLeftChild, key);
 
-        System.out.println("Successfully deleted");
+                    /*OK*/
+                    currentNode.replaceKeys(key, pairFromParent);
+                } else if(position + 1 < currentNode.getParent().getChildren().size()
+                        && currentNode.getParent()
+                        .getChildAt(position + 1)
+                        .getCountKeys() > T - 1) {
+                    /*OK*/
+                    Pair fromRightChild = currentNode.getParent()
+                            .getChildAt(position + 1)
+                            .getKeyWithDeletion(true);
+                    /*OK*/
+                    Pair pairFromParent = currentNode.getParent().replaceAndReturn(fromRightChild, key);
+
+                    /*OK*/
+                    currentNode.replaceKeys(key, pairFromParent);
+                } else {
+                    // ... merging
+
+                }
+            }
+            return;
+        }
+
+        // check case for leaf
+
+        // if internal node and can swap with child
+
+        // the other case with merge and rebuilding
     }
 
-    public Compared inRange(Node currentNode, int key) {
-        List<Pair> keys = currentNode.getKeys();
-        if (keys.size() == 0) {
-            return Compared.EQUALS;
+    private Node findNodeWithKey(int key) {
+        return findNodeWithKey(root, key);
+    }
+
+    private Node findNodeWithKey(Node currentNode, int key) {
+        if (currentNode == null) return null;
+
+        if (currentNode.isLeaf()) {
+            for (Pair pr : currentNode.getKeys()) {
+                if (key == pr.getKey())
+                    return currentNode;
+            }
+            return null;
         }
 
-        if (key < keys.get(0).getKey()) {
-            return Compared.SMALLER;
-        } else if (key > keys.get(keys.size() - 1).getKey()) {
-            return Compared.BIGGER;
+        for (int i = 0; i < currentNode.getKeys().size(); ++i) {
+            Pair value = currentNode.getKeys().get(i);
+            if (key <= value.getKey()) {
+                if (key == value.getKey()) return currentNode;
+                return findNodeWithKey(currentNode.getChildren().get(i), key);
+            }
         }
-        return Compared.EQUALS;
+        return findNodeWithKey(currentNode.getLastChild(), key);
     }
 
     private void rebuild(Node currentNode) {
@@ -93,8 +157,8 @@ public class BTree {
         if (currentNode.getParent() != null) {
             currentNode.getParent().addKey(currentNode.getKeyAt(middle));
 
-            for(int i = 0; i < currentNode.getParent().getChildren().size(); i ++ ) {
-                if(currentNode.getParent().getChildAt(i).getKeys().size() >= 2 * T - 1) {
+            for (int i = 0; i < currentNode.getParent().getChildren().size(); i++) {
+                if (currentNode.getParent().getChildAt(i).getKeys().size() >= 2 * T - 1) {
                     currentNode.getParent().getChildren().remove(i);
                     break;
                 }
@@ -167,7 +231,7 @@ public class BTree {
         System.out.println(root.getKeys());
         System.out.println("Depth: " + depth);
 
-        for(int i = 0; i < root.getChildren().size(); ++ i) {
+        for (int i = 0; i < root.getChildren().size(); ++i) {
             dive(depth + 1, root.getChildAt(i));
         }
     }

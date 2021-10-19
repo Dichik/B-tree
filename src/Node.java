@@ -43,10 +43,10 @@ public class Node {
     public void addChild(Node node) {
         children.add(node);
         Collections.sort(children, (o1, o2) -> {
-            if(o1.getKeyAt(0).getKey() > o2.getKeyAt(0).getKey()) {
+            if (o1.getKeyAt(0).getKey() > o2.getKeyAt(0).getKey()) {
                 return 1;
             }
-            if(o1.getKeyAt(0).getKey() < o2.getKeyAt(0).getKey()) {
+            if (o1.getKeyAt(0).getKey() < o2.getKeyAt(0).getKey()) {
                 return -1;
             }
             return 0;
@@ -57,9 +57,9 @@ public class Node {
         return keys.size();
     }
 
-    public int getCountSons() {return children.size();}
-
-    public List<Pair> getKeys() {return keys;}
+    public List<Pair> getKeys() {
+        return keys;
+    }
 
     public Node getParent() {
         return parent;
@@ -90,5 +90,48 @@ public class Node {
         return "Node{" +
                 "keys=" + keys +
                 '}';
+    }
+
+    public void deleteKeyAt(int index) {
+        keys.remove(index);
+    }
+
+    public int getIndexOfKey(int key) {
+        for(int i = 0; i < keys.size(); ++ i) {
+            if(keys.get(i).getKey() == key) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public Pair getKeyWithDeletion(boolean leftmost) {
+        int position = (!leftmost) ? getCountKeys() - 1 : 0;
+
+        Pair result = keys.get(position);
+        keys.remove(position);
+        return result;
+    }
+
+    public Pair replaceAndReturn(Pair fromLeftChild, int key) {
+        int position = -1;
+        for(int i = 0; i < getCountKeys(); ++ i) {
+            if(fromLeftChild.getKey() > keys.get(i).getKey()) {
+                position = i;
+            }
+        }
+        Pair result = keys.get(position);
+        keys.remove(position);
+        addKey(fromLeftChild);
+        return result;
+    }
+
+    public void replaceKeys(int key, Pair pairFromParent) {
+        for(int i = 0; i < getCountKeys(); ++ i) {
+            if(keys.get(i).getKey() == key) {
+                keys.remove(i);
+                addKey(pairFromParent);
+            }
+        }
     }
 }
